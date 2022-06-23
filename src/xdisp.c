@@ -32219,6 +32219,14 @@ gui_produce_glyphs (struct it *it)
 		 tab stop after that.  */
 	      if (next_tab_x - x < font->space_width)
 		next_tab_x += tab_width;
+	      /*
+	       * For tab-mark display vector like [?» ?\t],
+	       * we should not display "»\t" but only "»" at
+	       * tab-width boundry, or tab real length will
+	       * be tab-width+1, so we decrease tab-width here.
+	       */
+	      if (it->dpvec && it->current.dpvec_index > 0 && next_tab_x - x == tab_width)
+		next_tab_x -= tab_width;
 	      if (!NILP (Vdisplay_line_numbers) && it->line_number_produced_p)
 		{
 		  next_tab_x += it->lnum_pixel_width;
