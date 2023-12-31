@@ -38,6 +38,9 @@ along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.  */
 #include <string.h>  /* strlen */
 #include <ctype.h>   /* isspace, isalpha */
 
+#ifdef _UCRT
+#include <stdio.h>
+#else
 /* We don't want to include stdio.h because we are already duplicating
    lots of it here */
 extern int _snprintf (char *buffer, size_t count, const char *format, ...);
@@ -49,15 +52,9 @@ extern int _snprintf (char *buffer, size_t count, const char *format, ...);
 #define stdout GetStdHandle (STD_OUTPUT_HANDLE)
 #define stderr GetStdHandle (STD_ERROR_HANDLE)
 
-#if __GNUC__ + (__GNUC_MINOR__ >= 4) >= 5
-void fail (const char *, ...) __attribute__((noreturn));
-#else
-void fail (const char *, ...);
-#endif
 int vfprintf (HANDLE, const char *, va_list);
 int fprintf (HANDLE, const char *, ...);
 int printf (const char *, ...);
-void warn (const char *, ...);
 
 int
 vfprintf (HANDLE hnd, const char * msg, va_list args)
@@ -94,6 +91,15 @@ printf (const char * msg, ...)
 
   return rc;
 }
+
+#endif
+
+#if __GNUC__ + (__GNUC_MINOR__ >= 4) >= 5
+void fail (const char *, ...) __attribute__((noreturn));
+#else
+void fail (const char *, ...);
+#endif
+void warn (const char *, ...);
 
 void
 fail (const char * msg, ...)

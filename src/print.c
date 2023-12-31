@@ -92,6 +92,36 @@ static void print_interval (INTERVAL interval, Lisp_Object printcharfun);
 /* GDB resets this to zero on W32 to disable OutputDebugString calls.  */
 bool print_output_debug_flag EXTERNALLY_VISIBLE = 1;
 
+static int local_putc(int c, FILE *stream)
+{
+#ifdef _UCRT
+  if (_fileno(stream) < 0)
+  {
+    if (stream == stdout)
+      return write(STDOUT_FILENO, &c, 1);
+    else if (stream == stderr)
+      return write(STDERR_FILENO, &c, 1);
+  }
+#endif
+
+  return putc(c, stream);
+}
+
+static size_t local_fwrite(const void *buffer, size_t size, size_t n, FILE *stream)
+{
+#ifdef _UCRT
+  if (_fileno(stream) < 0)
+  {
+    if (stream == stdout)
+      return write(STDOUT_FILENO, buffer, size * n);
+    else if (stream == stderr)
+      return write(STDERR_FILENO, buffer, size * n);
+  }
+#endif
+
+  return fwrite(buffer, size, n, stream);
+}
+
 
 /* Low level output routines for characters and strings.  */
 
@@ -259,7 +289,7 @@ printchar_to_stream (unsigned int ch, FILE *stream)
     {
       if (ASCII_CHAR_P (ch))
 	{
-	  putc (ch, stream);
+	  local_putc (ch, stream);
 #ifdef WINDOWSNT
 	  /* Send the output to a debugger (nothing happens if there
 	     isn't one).  */
@@ -277,7 +307,7 @@ printchar_to_stream (unsigned int ch, FILE *stream)
 	  if (encode_p)
 	    encoded_ch = code_convert_string_norecord (encoded_ch,
 						       coding_system, true);
-	  fwrite (SSDATA (encoded_ch), 1, SBYTES (encoded_ch), stream);
+	  local_fwrite (SSDATA (encoded_ch), 1, SBYTES (encoded_ch), stream);
 #ifdef WINDOWSNT
 	  if (print_output_debug_flag && stream == stderr)
 	    OutputDebugString (SSDATA (encoded_ch));
@@ -330,7 +360,7 @@ printchar (unsigned int ch, Lisp_Object fun)
 	  if (DISP_TABLE_P (Vstandard_display_table))
 	    printchar_to_stream (ch, stdout);
 	  else
-	    fwrite (str, 1, len, stdout);
+	    local_fwrite (str, 1, len, stdout);
 	  noninteractive_need_newline = 1;
 	}
       else
@@ -402,7 +432,7 @@ strout (const char *ptr, ptrdiff_t size, ptrdiff_t size_byte,
 	    }
 	}
       else
-	fwrite (ptr, 1, size_byte, stdout);
+	local_fwrite (ptr, 1, size_byte, stdout);
 
       noninteractive_need_newline = 1;
     }

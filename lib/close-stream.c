@@ -55,6 +55,14 @@
 int
 close_stream (FILE *stream)
 {
+#ifdef _UCRT
+  if (stream == stdout || stream == stderr)
+    {
+      if (_fileno(stream) == -1) {
+        return 0;
+      }
+    }
+#endif
   const bool some_pending = (__fpending (stream) != 0);
   const bool prev_fail = (ferror (stream) != 0);
   const bool fclose_fail = (fclose (stream) != 0);
