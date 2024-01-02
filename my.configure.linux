@@ -1,0 +1,1 @@
+CFLAGS="-march=native -pipe -O2" ./configure --with-pgtk --with-native-compilation=aot --with-json --with-tree-sitter --without-compress-install
